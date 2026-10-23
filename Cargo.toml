@@ -1,0 +1,47 @@
+[package]
+name = "kube-desktop"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+license = "MIT"
+description = "A small, read-only native Kubernetes pod viewer"
+
+[[bin]]
+name = "Kube"
+path = "src/main.rs"
+
+[dependencies]
+eframe = { version = "0.37", default-features = false, features = ["wgpu_no_default_features", "default_fonts", "clipboard", "x11", "wayland"] }
+egui = "0.37"
+kube = { version = "4.2", default-features = false, features = ["client", "runtime", "rustls-tls", "ring"] }
+k8s-openapi = { version = "0.28", features = ["v1_34"] }
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+futures = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+directories = "6"
+rfd = "0.17"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "dx12"] }
+
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "metal", "vulkan"] }
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["io-util", "net"] }
+
+# kube 4.2 pins serde-saphyr 0.0.29, whose smallvec upper bound conflicts
+# with egui 0.37. Only that manifest bound is widened in the vendored copy.
+[patch.crates-io]
+serde-saphyr = { path = "vendor/serde-saphyr" }
+
+[profile.release]
+opt-level = "s"
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "abort"
